@@ -1,5 +1,5 @@
 let x = 0;
-let velocidad = 0.01;
+let velocidad = 3;
 function setup() {
   createCanvas(400, 200);
 }
