@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Desafío de Iluminación 3D - Proyecto U4</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', Courier, monospace; }
+        #interfaz {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #0f0;
+            pointer-events: none;
+            text-shadow: 2px 2px #000;
+        }
+        .error { color: #ff4444; font-weight: bold; font-size: 1.5em; }
+    </style>
+</head>
+<body>
+    <div id="interfaz">
+        <h1 id="titulo">MODO BUSQUEDA: ACTIVADO</h1>
+        <p id="instruccion">Cargando misión...</p>
+        <p id="objetivo" style="font-size: 1.2em; background: rgba(0,255,0,0.1); padding: 5px;"></p>
+        <p id="progreso">Encontrados: 0 / 5</p>
+    </div>
+
+    <script>
+        let objetos = [];
+        let ordenBusqueda = [];
+        let indiceActual = 0;
+        let estadoJuego = "JUGANDO"; // "JUGANDO", "GANASTE", "PERDISTE"
+        let angulo = 0;
+        let intensidadLinterna = 255;
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight, WEBGL);
+            
+            // Definir los 5 objetos con sus propiedades y posiciones aleatorias
+            objetos = [
+                { nombre: "ESFERA", tipo: "esfera", x: -300, y: -150, z: 0, encontrado: false },
+                { nombre: "CUBO", tipo: "cubo", x: 250, y: 200, z: -100, encontrado: false },
+                { nombre: "TOROIDE", tipo: "toro", x: 0, y: -250, z: 50, encontrado: false },
+                { nombre: "CONO", tipo: "cono", x: -200, y: 250, z: -50, encontrado: false },
+                { nombre: "CILINDRO", tipo: "cilindro", x: 300, y: -200, z: 0, encontrado: false }
+            ];
+
+            // Crear orden aleatorio de búsqueda
+            ordenBusqueda = [...objetos];
+            ordenBusqueda = shuffle(ordenBusqueda);
+            
+            actualizarUI();
+        }
+
+        function draw() {
+            if (estadoJuego !== "JUGANDO") {
+                background(estadoJuego === "PERDISTE" ? 50 : 10, 0, 0);
+                return; 
+            }
+
+            background(2); // Oscuridad casi total
+
+            // LINTERNA: Luz puntual muy cerrada que sigue al mouse
+            let locX = mouseX - width / 2;
+            let locY = mouseY - height / 2;
+            
+            // Requisito: Al menos 2 tipos de luces
+            ambientLight(5); // Luz de apoyo mínima
+            pointLight(255, 255, 255, locX, locY, 150);
+
+            // Aplicamos la caída de luz para que no ilumine todo el mapa
+            lightFalloff(0.8, 0.0002, 0.0001); 
+
+            noStroke();
+            angulo += 0.015;
+
+            // Dibujar los 5 objetos
+            for (let i = 0; i < objetos.length; i++) {
+                let obj = objetos[i];
+                push();
+                translate(obj.x, obj.y, obj.z);
+                rotateX(angulo);
+                rotateY(angulo);
+
+                // Lógica de Materiales:
+                // Si ya fue encontrado, brilla en verde.
+                // Si no, tiene un material especular muy oscuro que solo se ve si la luz está cerca.
+                if (obj.encontrado) {
+                    specularMaterial(0, 255, 0);
+                } else {
+                    specularMaterial(20); // Muy oscuro (casi invisible)
+                    shininess(100);       // Pero con mucho brillo para que la linterna lo revele
+                }
+
+                dibujarForma(obj.tipo);
+                pop();
+            }
+        }
+
+        function dibujarForma(tipo) {
+            if (tipo === "esfera") sphere(50);
+            else if (tipo === "cubo") box(80);
+            else if (tipo === "toro") torus(50, 20);
+            else if (tipo === "cono") cone(50, 80);
+            else if (tipo === "cilindro") cylinder(40, 90);
+        }
+
+        function mousePressed() {
+            if (estadoJuego !== "JUGANDO") return;
+
+            let locX = mouseX - width / 2;
+            let locY = mouseY - height / 2;
+            let objetoClickeado = null;
+
+            // Detectar cuál objeto se clickeó
+            for (let obj of objetos) {
+                if (dist(locX, locY, obj.x, obj.y) < 70) {
+                    objetoClickeado = obj;
+                    break;
+                }
+            }
+
+            if (objetoClickeado) {
+                // Verificar si es el objeto que toca según el orden
+                if (objetoClickeado.nombre === ordenBusqueda[indiceActual].nombre) {
+                    if (!objetoClickeado.encontrado) {
+                        objetoClickeado.encontrado = true;
+                        indiceActual++;
+                        if (indiceActual >= ordenBusqueda.length) {
+                            estadoJuego = "GANASTE";
+                        }
+                        actualizarUI();
+                    }
+                } else {
+                    // SI CLICKEO EL INCORRECTO: PIERDE
+                    estadoJuego = "PERDISTE";
+                    actualizarUI();
+                }
+            }
+        }
+
+        function actualizarUI() {
+            let elInstruccion = document.getElementById('instruccion');
+            let elObjetivo = document.getElementById('objetivo');
+            let elProgreso = document.getElementById('progreso');
+
+            if (estadoJuego === "JUGANDO") {
+                elInstruccion.innerText = "BUSCA EL SIGUIENTE OBJETO EN ORDEN:";
+                elObjetivo.innerText = "OBJETIVO ACTUAL: " + ordenBusqueda[indiceActual].nombre;
+                elProgreso.innerText = "ENCONTRADOS: " + indiceActual + " / 5";
+            } else if (estadoJuego === "PERDISTE") {
+                document.getElementById('titulo').innerText = "MISIÓN FALLIDA";
+                document.getElementById('titulo').className = "error";
+                elInstruccion.innerText = "Hiciste clic en el objeto equivocado.";
+                elObjetivo.innerText = "EL ORDEN ERA IMPORTANTE.";
+                elProgreso.innerText = "PRESIONA F5 PARA REINTENTAR";
+            } else if (estadoJuego === "GANASTE") {
+                document.getElementById('titulo').innerText = "MISIÓN CUMPLIDA";
+                elInstruccion.innerText = "Has recuperado todos los objetos.";
+                elObjetivo.innerText = "¡ERES UN MAESTRO DE LA LUZ!";
+                elProgreso.innerText = "PUNTUACIÓN PERFECTA";
+            }
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+    </script>
+</body>
+</html>
