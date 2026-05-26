@@ -2,134 +2,184 @@ package Metodos_Numericos;
 
 import java.util.Scanner;
 
-public class Practica_4 
+public class Practica_5 
 {
-	public static String format(double x) 
-	{
-	    return String.format("%.5g", x);
-	}
     public static void main(String[] args) 
     {
-        Scanner scanner = new Scanner(System.in); 
+        Scanner sc = new Scanner(System.in);
         
         System.out.println("\t\t\t\t\tInstituto Tecnológico de Culiacán");
-        System.out.println("\t\t\t\t\tIng. en Sistemas Computacionales");
+        System.out.println("\t\t\t\t\tIng. en Sistemas Computacionales\n");
         System.out.println("Loya Chaidez Jaime Eduardo");
-        System.out.println("Solución de Sistemas de Ecuaciones");
-        System.out.println("Método de Jacobi");
-        System.out.println("11:00 - 12:00 horas\n");
+        System.out.println("Método de Simpson");
+        System.out.println("De 11:00 a 12:00 horas\n");
+        System.out.println("Este programa ejecuta el proceso de cálculo sobre el tema de derivación e integración numérica utilizando las 4 reglas de Simpson \n");
 
-        System.out.print("Ingrese la pregunta del Problema");
-        String pregunta = scanner.nextLine();
-        System.out.print("Ingrese la Unidad de medida: ");
-        String unidad = scanner.nextLine();
+        System.out.print("Cuál es la ,uk,u, pregunta del Problema: ");
+        String pregunta = sc.nextLine();
+        System.out.print("Valor real de la integral: ");
+        double Vreal = sc.nextDouble();
+        System.out.print("Límite inferior (a): ");
+        double a = sc.nextDouble();
+        System.out.print("Límite superior (b): ");
+        double b = sc.nextDouble();
+        sc.nextLine(); 
+        System.out.print("Unidad: ");
+        String Unidad = sc.nextLine();
 
-        int orden = 0;
+        System.out.println("\nMétodo de las Reglas de Simpson");
+        System.out.println("- Regla 1 : n=2");
+        System.out.println("- Regla 2 : n=3");
+        System.out.println("- Regla 3 : n>2 y n=par");
+        System.out.println("- Regla 4 : n>3, n=impar y n= multiple de 3\n");
+
+        int N3, N4;
         do 
         {
-            System.out.print("Ingrese el orden de la matriz (2 a 6): ");
-            orden = scanner.nextInt();
-        } while (orden < 2 || orden > 6);
-
-        String[] concepto = new String[orden]; double[] vant = new double[orden]; double[] vact = new double[orden];
-
-        for (int f = 0; f < orden; f++) 
-        {
-            scanner.nextLine();
-            System.out.print("Ingrese el concepto de la incógnita " + (f + 1) + ": ");
-            concepto[f] = scanner.nextLine();
-            System.out.print("Ingrese el valor inicial de " + concepto[f] + ": ");
-            vant[f] = scanner.nextDouble();
-            vact[f] = 0.0;
-        }
-
-        System.out.print("\nIngrese el error a tolerar: ");
-        double error = scanner.nextDouble();
-        System.out.print("Ingrese el total de calculos máximo (Tc): ");
-        int totalC = scanner.nextInt();
-
-        double[][] matriz = new double[orden][orden + 1];
-        System.out.println("\nCaptura de los datos de la matriz:");
-        for (int f = 0; f < orden; f++) 
-        {
-            for (int c = 0; c < orden + 1; c++) 
-            {
-                System.out.print("Matriz [" + (f + 1) + "][" + (c + 1) + "]: ");
-                matriz[f][c] = scanner.nextDouble();
-            }
-        }
-
-        System.out.println("\n\n\n");
-        System.out.println("==========================================================================================");
-        System.out.println("\t\t\t\t\tInstituto Tecnológico de Culiacán");
-        System.out.println("\t\t\t\t\tIng. en Sistemas Computacionales");
-        System.out.println("Loya Chaidez Jaime Eduardo");
-        System.out.println("Solución de Sistemas de Ecuaciones");
-        System.out.println("Método de Jacobi");
-        System.out.println("11:00 - 12:00 horas \n");
-        System.out.println("PROBLEMA: " + pregunta + "\n");
-
-        int Columnas = 15;
-        String linea = "-".repeat(10 + (orden + 1) * Columnas);
-        System.out.println(linea);
-        System.out.printf("%-7s", "No.");
-        for (String c : concepto) System.out.printf("%-" + Columnas + "s", c);
-        System.out.printf("%-" + Columnas + "s\n", "Error Total");
-        System.out.println(linea);
-
-        int nc = 0;
-        double errorTotal = 0.0;
-        System.out.printf("%-7d", nc);
-        for (double v : vant) System.out.printf("%-" + Columnas + "s", format(v));
-        System.out.printf("%-" + Columnas + "s\n", format(errorTotal));
-
+            System.out.print("Capture el Numero de Divisiones para la regla 3: ");
+            N3 = sc.nextInt();
+        } while (N3 != 2 && !(N3 > 2 && N3 % 2 == 0));
         do 
         {
-            for (int f = 0; f < orden; f++) 
-            {
-                double suma = matriz[f][orden];
-                double coef = matriz[f][f];
-                for (int c = 0; c < orden; c++) 
-                {
-                    if (f != c) 
-                    {
-                        suma += ((matriz[f][c] * -1.0) * vant[c]);
-                    }
-                }
-                vact[f] = suma / coef;
-            }
+            System.out.print("Capture el Numero de Divisiones para la regla 4: ");
+            N4 = sc.nextInt();
+        } while (N4 != 3 && !(N4 > 3 && N4 % 3 == 0)); 
 
-            errorTotal = 0.0;
-            for (int p = 0; p < orden; p++) 
-            {
-                errorTotal += Math.abs(Math.abs(vact[p]) - Math.abs(vant[p]));
-            }
+        String encabezado = "\nInstituto Tecnológico de Culiacán\nIng. en Sistemas Computacionales\n\nLoya Chaidez Jaime Eduardo\nIntegración Numérica - Método de Simpson";
+        String horas = "De 11:00 a 12:00 horas.\n\nPregunta: ";
+        String tabla = String.format("%-5s %-12s %-15s %-10s %-15s\n", "Pxy", "x", "f(x)", "Factor", "f(x) * Factor");
+  
+        //Regla 1
+        int n1 = 2;
+        double h1 = (b - a) / n1;
+        System.out.println(encabezado + "\nRegla aplicada para Simpson de 1/3 para n=2.\n" + horas + pregunta);
+        System.out.println("-------------------------------------------------------------------------");
+        System.out.print(tabla);
+        System.out.println("-------------------------------------------------------------------------");
+        
+        double fa1 = Math.pow(a, 3) - Math.sin(a + 1);
+        double x1_1 = a + h1;
+        double fx1_1 = Math.pow(x1_1, 3) - Math.sin(x1_1 + 1);
+        double fb1 = Math.pow(b, 3) - Math.sin(b + 1);
+        
+        System.out.printf("%-5d %-12.5f %-15.5f %-10d %-15.5f\n", 1, a, fa1, 1, fa1);
+        System.out.printf("%-5d %-12.5f %-15.5f %-10d %-15.5f\n", 2, x1_1, fx1_1, 4, (4 * fx1_1));
+        System.out.printf("%-5d %-12.5f %-15.5f %-10d %-15.5f\n", 3, b, fb1, 1, fb1);
 
-            nc++;
-            System.out.printf("%-7d", nc);
-            for (double v : vact) System.out.printf("%-" + Columnas + "s", format(v));
-            System.out.printf("%-" + Columnas + "s\n", format(errorTotal));
+        double Vcalc1 = (h1 / 3) * (fa1 + (4 * fx1_1) + fb1);
+        double Error1 = Math.abs(Vreal - Vcalc1);
+        
+        System.out.println("-------------------------------------------------------------------------");
+        System.out.printf("%35s %10.5f\n\nNo. de Divisiones = %d\n", "Área Simpson 1/3=", Vcalc1, n1);
+        System.out.printf("Valor Real de la Integral = %.5f %s\nValor por el Método      = %.5f %s\nError del Método         = %.5f %s\n", Vreal, Unidad, Vcalc1, Unidad, Error1, Unidad);
+        
+        System.out.println("===========================================================================");
+        
+        //Regla 2
+        int n2 = 3;
+        double h2 = (b - a) / n2;
+        System.out.println(encabezado + "\nRegla aplicada para Simpson de 3/8 para n=3.\n" + horas + pregunta);
+       
+        System.out.println("-------------------------------------------------------------------------");        
+        System.out.print(tabla);
+        System.out.println("-------------------------------------------------------------------------");
+        
+        double fa2 = Math.pow(a, 3) - Math.sin(a + 1);
+        double x1_2 = a + h2;
+        double x2_2 = a + (2 * h2);
+        double fx1_2 = Math.pow(x1_2, 3) - Math.sin(x1_2 + 1);
+        double fx2_2 = Math.pow(x2_2, 3) - Math.sin(x2_2 + 1);
+        double fb2 = Math.pow(b, 3) - Math.sin(b + 1);
+        
+        System.out.printf("%-5d %-12.5f %-15.5f %-10d %-15.5f\n", 1, a, fa2, 1, fa2);
+        System.out.printf("%-5d %-12.5f %-15.5f %-10d %-15.5f\n", 2, x1_2, fx1_2, 3, (3 * fx1_2));
+        System.out.printf("%-5d %-12.5f %-15.5f %-10d %-15.5f\n", 3, x2_2, fx2_2, 3, (3 * fx2_2));
+        System.out.printf("%-5d %-12.5f %-15.5f %-10d %-15.5f\n", 4, b, fb2, 1, fb2);
 
-            for (int p = 0; p < orden; p++) 
-            {
-                vant[p] = vact[p];
-            }
+        double Vcalc2 = ((3 * h2) / 8) * (fa2 + (3 * fx1_2) + (3 * fx2_2) + fb2);
+        double Error2 = Math.abs(Vreal - Vcalc2);
 
-        } while (errorTotal > error && nc < totalC);
-
-        System.out.println(linea);
-
-        if (errorTotal <= error) 
+        System.out.println("-------------------------------------------------------------------------");
+        System.out.printf("%35s %10.5f\n\nNo. de Divisiones = %d\n", "Área Simpson 3/8=", Vcalc2, n2);
+        System.out.printf("Valor Real de la Integral = %.5f %s\nValor por el Método      = %.5f %s\nError del Método         = %.5f %s\n", Vreal, Unidad, Vcalc2, Unidad, Error2, Unidad);
+        
+        System.out.println("===========================================================================");
+        
+        //Regla 3
+        double Vcalc3 = 0, h3 = (b - a) / N3;
+        System.out.println(encabezado + "\nRegla aplicada para Simpson de 1/3 compleja para n=" + horas + pregunta);
+        System.out.println("-------------------------------------------------------------------------");
+        System.out.print(tabla);
+        System.out.println("-------------------------------------------------------------------------");
+        
+        for (int x = 1; x <= N3 + 1; x++) 
         {
-            System.out.println("\nResultados:\n");
-            for (int i = 0; i < orden; i++) 
+            double pto, fpto, valor;
+            int factor;
+
+            if (x == 1) 
             {
-                System.out.println("\t\t" + concepto[i] + " = " + format(vact[i]) + " " + unidad + ".");
+                factor = 1; pto = a;
+            } 
+            else if (x == N3 + 1) 
+            {
+                factor = 1; pto = b;
+            } 
+            else 
+            {
+                factor = (x % 2 == 0) ? 4 : 2;
+                pto = a + ((x - 1) * h3);
             }
-        } 
-        else 
-        {
-            System.out.println("\nEl proceso superó el número máximo de calculos y no encontró la mejor aproximación.");
+            fpto = Math.pow(pto, 3) - Math.sin(pto + 1);
+            valor = factor * fpto;
+            Vcalc3 += valor;
+            System.out.printf("%-5d %-12.5f %-15.5f %-10d %-15.5f\n", x, pto, fpto, factor, valor);
         }
+        
+        Vcalc3 = (h3 / 3) * Vcalc3;
+        double Error3 = Math.abs(Vreal - Vcalc3);
+        
+        System.out.println("-------------------------------------------------------------------------");
+        System.out.printf("%35s %10.5f\n\nNo. de Divisiones = %d\n", "Área Simpson 1/3=", Vcalc3, N3);
+        System.out.printf("Valor Real de la Integral = %.5f %s\nValor por el Método      = %.5f %s\nError del Método         = %.5f %s\n", Vreal, Unidad, Vcalc3, Unidad, Error3, Unidad);
+        
+        System.out.println("===========================================================================");
+        
+        //Regla 4
+        double Vcalc4 = 0, h4 = (b - a) / N4;
+        System.out.println(encabezado + "\nRegla aplicada para Simpson de 3/8 compleja para n=" + horas + pregunta);
+        System.out.println("-------------------------------------------------------------------------");
+        System.out.print(tabla);
+        System.out.println("-------------------------------------------------------------------------");
+        
+        for (int xx = 1; xx <= N4 + 1; xx++) 
+        {
+            double pto, fpto, valor;
+            int factor;
+
+            if (xx == 1) 
+            {
+                factor = 1; pto = a;
+            } 
+            else if (xx == N4 + 1) 
+            {
+                factor = 1; pto = b;
+            } 
+            else 
+            {
+                factor = ((xx - 1) % 3 == 0) ? 2 : 3;
+                pto = a + ((xx - 1) * h4);
+            }
+            fpto = Math.pow(pto, 3) - Math.sin(pto + 1);
+            valor = factor * fpto;
+            Vcalc4 += valor;
+            System.out.printf("%-5d %-12.5f %-15.5f %-10d %-15.5f\n", xx, pto, fpto, factor, valor);
+        }
+        Vcalc4 = (3 * h4 / 8) * Vcalc4;
+        double Error4 = Math.abs(Vreal - Vcalc4);
+        
+        System.out.println("-------------------------------------------------------------------------");
+        System.out.printf("%35s %10.5f\n\nNo. de Divisiones = %d\n", "Área Simpson 3/8=", Vcalc4, N4);
+        System.out.printf("Valor Real de la Integral = %.5f %s\nValor por el Método      = %.5f %s\nError del Método         = %.5f %s\n", Vreal, Unidad, Vcalc4, Unidad, Error4, Unidad);
     }
 }
