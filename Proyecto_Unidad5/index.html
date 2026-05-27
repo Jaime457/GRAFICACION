@@ -1,12 +1,792 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
-    <meta charset="utf-8">
+  <meta charset="UTF-8"/>
+  <title>🎯 Galería de Tiro 3D — Proyecto Integrador</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+    canvas { display: block; cursor: none; }
+
+    /* ── Crosshair ── */
+    #crosshair {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 28px; height: 28px; pointer-events: none;
+    }
+    .ch-h { position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: rgba(255,255,255,0.85); transform: translateY(-50%); }
+    .ch-v { position: absolute; left: 50%; top: 0;  width: 1px; height: 100%; background: rgba(255,255,255,0.85); transform: translateX(-50%); }
+    .ch-gap { /* hides center 4px */
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 5px; height: 5px; background: transparent;
+      border: 1px solid rgba(255,50,50,0.9); border-radius: 50%;
+    }
+
+    /* ── HUD top ── */
+    #hud-top {
+      position: absolute; top: 0; left: 0; right: 0;
+      display: none; justify-content: space-between;
+      padding: 14px 22px;
+    }
+    .hud-box {
+      background: rgba(0,10,28,0.78); border: 1px solid rgba(0,200,255,0.32);
+      border-radius: 6px; padding: 8px 16px; backdrop-filter: blur(4px);
+    }
+    .hud-lbl { font-size: 9px; letter-spacing: 2px; color: #5aabcc; margin-bottom: 2px; }
+    .hud-val { font-size: 24px; font-weight: bold; }
+    #v-score { color: #00ffe7; }
+    #v-timer { color: #fff; }
+    #v-combo { color: #ffd700; }
+
+    /* ── Ammo / cooldown bar ── */
+    #shoot-bar-wrap {
+      position: absolute; bottom: 28px; left: 50%;
+      transform: translateX(-50%);
+      width: 140px; height: 5px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 3px; display: none;
+    }
+    #shoot-bar {
+      height: 100%; width: 100%;
+      background: rgba(0,255,200,0.7);
+      border-radius: 3px;
+      transition: width 0.08s linear;
+    }
+
+    /* ── Popups de puntos ── */
+    #popups { position: absolute; inset: 0; pointer-events: none; }
+    .popup {
+      position: absolute; font-size: 22px; font-weight: bold;
+      pointer-events: none; text-shadow: 0 0 12px currentColor;
+      animation: floatUp 0.85s ease-out forwards;
+    }
+    @keyframes floatUp {
+      0%   { transform: translateY(0)    scale(1.1); opacity: 1; }
+      100% { transform: translateY(-70px) scale(0.9); opacity: 0; }
+    }
+
+    /* ── Indicador diana dorada ── */
+    #gold-hint {
+      position: absolute; bottom: 60px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px; letter-spacing: 3px; color: #ffd700;
+      text-shadow: 0 0 12px #ffd700; opacity: 0;
+      transition: opacity 0.3s; pointer-events: none;
+    }
+
+    /* ── Pantalla inicio / fin ── */
+    #screen {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: rgba(0,4,18,0.9);
+    }
+    #screen h1 {
+      font-size: 46px; letter-spacing: 6px; color: #00ffe7;
+      text-shadow: 0 0 25px #00ffe7; margin-bottom: 6px;
+    }
+    #screen h2 { font-size: 18px; color: rgba(255,255,255,0.5); margin-bottom: 28px; }
+    .legend { display: flex; gap: 24px; margin-bottom: 24px; }
+    .leg-item {
+      background: rgba(0,20,45,0.8); border: 1px solid rgba(0,200,255,0.25);
+      border-radius: 8px; padding: 12px 20px; text-align: center;
+    }
+    .leg-icon  { font-size: 28px; }
+    .leg-name  { font-size: 11px; letter-spacing: 1px; color: #7ecfff; margin-top: 4px; }
+    .leg-pts   { font-size: 20px; font-weight: bold; margin-top: 2px; }
+    .leg-note  { font-size: 9px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .controls  { font-size: 11px; color: rgba(255,255,255,0.45); letter-spacing: 1px; margin-bottom: 28px; text-align: center; line-height: 1.9; }
+    .btn {
+      padding: 13px 44px; background: transparent;
+      border: 2px solid #00ffe7; color: #00ffe7;
+      font-family: 'Courier New', monospace; font-size: 14px;
+      letter-spacing: 3px; border-radius: 4px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: rgba(0,255,231,0.12); box-shadow: 0 0 22px rgba(0,255,231,0.35); }
+
+    /* ── Flash de daño/acierto ── */
+    #flash {
+      position: absolute; inset: 0; pointer-events: none;
+      opacity: 0; transition: opacity 0.06s;
+    }
+  </style>
 </head>
 <body>
-    <main></main>
-    <script src="sketch.js"></script>
+
+<!-- Crosshair central -->
+<div id="crosshair">
+  <div class="ch-h"></div>
+  <div class="ch-v"></div>
+  <div class="ch-gap"></div>
+</div>
+
+<!-- HUD superior -->
+<div id="hud-top">
+  <div class="hud-box"><div class="hud-lbl">PUNTUACIÓN</div><div class="hud-val" id="v-score">0</div></div>
+  <div class="hud-box" style="text-align:center"><div class="hud-lbl">TIEMPO</div><div class="hud-val" id="v-timer">60</div></div>
+  <div class="hud-box" style="text-align:right"><div class="hud-lbl">COMBO</div><div class="hud-val" id="v-combo">×1</div></div>
+</div>
+
+<!-- Barra cooldown de disparo -->
+<div id="shoot-bar-wrap"><div id="shoot-bar"></div></div>
+
+<!-- Popups de puntos -->
+<div id="popups"></div>
+
+<!-- Indicador diana dorada -->
+<div id="gold-hint">✦ DIANA DORADA ACTIVA</div>
+
+<!-- Flash de efecto -->
+<div id="flash"></div>
+
+<!-- Pantalla inicio / fin -->
+<div id="screen">
+  <h1>🎯 SHOOTING RANGE</h1>
+  <h2>GALERÍA DE TIRO 3D — Primera Persona</h2>
+  <div class="legend">
+    <div class="leg-item">
+      <div class="leg-icon">🔴</div>
+      <div class="leg-name">DIANA NORMAL</div>
+      <div class="leg-pts" style="color:#00ffe7">100 pts</div>
+      <div class="leg-note">Grande · Estática</div>
+    </div>
+    <div class="leg-item">
+      <div class="leg-icon">🟡</div>
+      <div class="leg-name">DIANA DORADA</div>
+      <div class="leg-pts" style="color:#ffd700">500 pts</div>
+      <div class="leg-note">Pequeña · Se mueve</div>
+    </div>
+    <div class="leg-item">
+      <div class="leg-icon">❌</div>
+      <div class="leg-name">FALLO</div>
+      <div class="leg-pts" style="color:#ff4444">−30 pts</div>
+      <div class="leg-note">No desperdicies balas</div>
+    </div>
+  </div>
+  <div class="controls">
+    CLICK en el canvas → bloquear puntero y apuntar<br>
+    CLICK → disparar &nbsp;|&nbsp; ESC → liberar puntero
+  </div>
+  <button class="btn" id="start-btn">▶ INICIAR PARTIDA</button>
+</div>
+
+<script>
+
+// ── Cámara primera persona ──
+let yaw   = 0;          // rotación horizontal (mouse X)
+let pitch = 0;          // rotación vertical   (mouse Y)
+const SENS        = 0.0016;
+const PITCH_MAX   = 0.95;   // límite de inclinación (~55°)
+const EYE_Y       = -30;    // altura del ojo del jugador
+
+// ── Objetos de escena ──
+let targets      = [];  // Clase Target (dianas)
+let hitFX        = [];  // Clase HitParticle (partículas de impacto)
+
+// ── Estado del juego ──
+let score       = 0;
+let timeLeft    = 60;
+let combo       = 1;
+let comboTimer  = 0;
+let gameState   = 'menu';  // 'menu' | 'playing' | 'over'
+
+// ── Efectos ──
+let shootCooldown = 0;       // frames hasta próximo disparo
+let muzzleFlash   = 0;       // intensidad del destello
+let shakeAmt      = 0;       // tremblor de cámara
+
+// ── Timers de spawn ──
+let normalTimer = 0;
+const NORMAL_INT = 95;       // frames entre dianas normales
+let goldenTimer = 200;
+const GOLDEN_INT = 350;      // frames entre dianas doradas
+
+let pointerLocked = false;
+let cnv;
+
+// ════════════════════ SETUP ════════════════════
+function setup() {
+  cnv = createCanvas(windowWidth, windowHeight, WEBGL);
+  cnv.elt.style.cursor = 'none';
+
+  // Campo de visión FPS (60°)
+  perspective(PI / 3, width / height, 0.5, 3000);
+
+  // ── Pointer Lock API (Req. 2: interacción de mouse) ──
+  cnv.elt.addEventListener('click', onCanvasClick);
+  document.addEventListener('pointerlockchange', () => {
+    pointerLocked = document.pointerLockElement === cnv.elt;
+  });
+  document.addEventListener('mousemove', onMouseMove);
+
+  // Botón inicio
+  document.getElementById('start-btn').addEventListener('click', startGame);
+}
+
+// ════════════════════ DRAW — bucle principal ════════════════════
+function draw() {
+  if (gameState !== 'playing') { background(4, 6, 18); return; }
+
+  background(10, 12, 24);
+
+  // ── Iluminación dinámica (Req. 4: efectos visuales) ──
+  ambientLight(22, 28, 50);
+  directionalLight(35, 40, 70, 0, -1, -0.4);
+  // Luz orbital lenta (usa frameCount → Req. 1: animación)
+  pointLight(0, 140, 255,  cos(frameCount * 0.02) * 300, -80, -350);
+  pointLight(180, 80,   0, -cos(frameCount * 0.02) * 300, -60, -200);
+  // Flash de disparo: lerp hacia 0 (Req. 5: interpolación)
+  if (muzzleFlash > 0.05) {
+    pointLight(255, 220, 140, 0, EYE_Y, 10);
+    muzzleFlash = lerp(muzzleFlash, 0, 0.3);  // lerp (Req. 5)
+  }
+
+  // ── Cámara primera persona con shake (Req. 2: interacción) ──
+  let sh = shakeAmt > 0.01 ? random(-shakeAmt, shakeAmt) * 0.004 : 0;
+  if (shakeAmt > 0.01) shakeAmt = lerp(shakeAmt, 0, 0.18);  // lerp (Req. 5)
+
+  // Vector de mira a partir de yaw/pitch
+  let lx =  sin(yaw)  * cos(pitch + sh);
+  let ly =  sin(pitch + sh);
+  let lz = -cos(yaw)  * cos(pitch + sh);
+  camera(0, EYE_Y, 0,
+         lx * 200, EYE_Y + ly * 200, lz * 200,
+         0, 1, 0);
+
+  // ── Entorno (Objeto 3: escenario) ──
+  drawEnvironment();
+
+  // ── Targets: actualizar + dibujar (Objetos 1 y 2) ──
+  for (let i = targets.length - 1; i >= 0; i--) {
+    targets[i].update();
+    targets[i].draw();
+    if (targets[i].isDead()) {
+      if (!targets[i].hit) score = max(0, score - 15);  // penalizar expiración
+      targets.splice(i, 1);
+    }
+  }
+
+  // ── Partículas de impacto (Objeto 4) ──
+  for (let i = hitFX.length - 1; i >= 0; i--) {
+    hitFX[i].update();
+    hitFX[i].draw();
+    if (hitFX[i].isDead()) hitFX.splice(i, 1);
+  }
+
+  // ── Spawn de dianas ──
+  normalTimer++;
+  goldenTimer++;
+  let normCount   = targets.filter(t => t.type === 'normal').length;
+  let goldenCount = targets.filter(t => t.type === 'golden').length;
+  if (normalTimer >= NORMAL_INT && normCount < 7) {
+    targets.push(new Target('normal'));
+    normalTimer = 0;
+  }
+  if (goldenTimer >= GOLDEN_INT && goldenCount < 2) {
+    targets.push(new Target('golden'));
+    goldenTimer = 0;
+    showGoldHint();
+  }
+
+  // ── Temporizador (60 fps → 1 segundo) ──
+  if (frameCount % 60 === 0) {
+    timeLeft--;
+    if (timeLeft <= 0) endGame();
+  }
+
+  // ── Cooldown de disparo + combo ──
+  if (shootCooldown > 0) shootCooldown--;
+  if (comboTimer   > 0) {
+    comboTimer--;
+    if (comboTimer <= 0) combo = 1;
+  }
+
+  updateHUD();
+}
+
+// ════════════════════ ENTORNO 3D ════════════════════
+function drawEnvironment() {
+  noStroke();
+
+  // ── Suelo con cuadrícula ──
+  push();
+  translate(0, 140, -150);
+  rotateX(HALF_PI);
+  fill(9, 14, 26);
+  plane(1600, 1200);
+  stroke(0, 70, 140, 65);
+  strokeWeight(0.7);
+  for (let x = -800; x <= 800; x += 70) line(x, -600, 0, x, 600, 0);
+  for (let z = -600; z <= 600; z += 70) line(-800, z, 0, 800, z, 0);
+  pop();
+
+  // ── Techo ──
+  push();
+  translate(0, -220, -150);
+  rotateX(HALF_PI);
+  fill(5, 7, 16);
+  noStroke();
+  plane(1600, 1200);
+  // Luces de techo
+  stroke(0, 90, 180, 35);
+  strokeWeight(1);
+  for (let x = -600; x <= 600; x += 200) {
+    line(x, -500, 0, x, 500, 0);
+  }
+  pop();
+
+  // ── Pared trasera ──
+  push();
+  translate(0, -35, -700);
+  fill(7, 11, 22);
+  noStroke();
+  plane(1600, 390);
+  // Líneas de panel
+  stroke(0, 45, 95, 55);
+  strokeWeight(0.6);
+  for (let x = -800; x <= 800; x += 110) line(x, -195, 0, x, 195, 0);
+  for (let y = -195; y <= 195; y +=  90) line(-800, y, 0, 800, y, 0);
+  pop();
+
+  // ── Paredes laterales ──
+  push();
+  translate(-750, -35, -150);
+  rotateY(HALF_PI);
+  fill(6, 10, 20); noStroke();
+  plane(1200, 390);
+  pop();
+
+  push();
+  translate(750, -35, -150);
+  rotateY(-HALF_PI);
+  fill(6, 10, 20); noStroke();
+  plane(1200, 390);
+  pop();
+
+  // ── Pilares decorativos ──
+  for (let side of [-1, 1]) {
+    for (let z of [-200, -450]) {
+      push();
+      translate(side * 600, -35, z);
+      fill(12, 18, 35);
+      stroke(0, 60, 120, 50);
+      strokeWeight(0.5);
+      box(20, 380, 20);
+      // Línea de luz en el pilar
+      translate(side * -8, 0, 8);
+      stroke(0, 100, 200, 60);
+      strokeWeight(1);
+      line(0, -180, 0, 0, 180, 0);
+      pop();
+    }
+  }
+
+  // ── Líneas de neón en suelo ──
+  push();
+  translate(0, 139, -150);
+  stroke(0, 100, 200, 40);
+  strokeWeight(1.2);
+  line(-200, 0, -600, -200, 0, 300);
+  line( 200, 0, -600,  200, 0, 300);
+  line(-200, 0, -600,  200, 0, -600);
+  pop();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CLASE Target — Diana (Objeto 1: normal | Objeto 2: dorada)
+// ═══════════════════════════════════════════════════════════════
+class Target {
+  constructor(type) {
+    this.type = type;
+
+    // Posición aleatoria en el semicírculo frontal
+    let a    = random(-PI * 0.6, PI * 0.6);
+    let dist = (type === 'golden') ? random(220, 430) : random(160, 380);
+    this.x     = sin(a) * dist;
+    this.z     = -cos(a) * dist;          // negativo = frente al jugador
+    this.baseY = random(-110, 40);        // altura variada
+    this.y     = this.baseY;
+
+    // Animación de bob (Req. 1: funciones matemáticas)
+    this.bobPhase = random(TWO_PI);
+    this.bobAmp   = type === 'golden' ? random(15, 28) : random(5, 14);
+    this.bobSpd   = type === 'golden' ? random(0.07, 0.13) : random(0.03, 0.07);
+
+    if (type === 'golden') {
+      this.radius  = random(13, 19);
+      this.value   = 500;
+      this.maxLife = floor(random(130, 200));   // desaparece rápido
+      this.driftX  = random([-1.4, 1.4]) * random(0.8, 1.5); // deriva lateral
+    } else {
+      this.radius  = random(24, 36);
+      this.value   = 100;
+      this.maxLife = floor(random(280, 480));
+      this.driftX  = 0;
+    }
+
+    this.life    = this.maxLife;
+    this.alpha   = 0;             // fade-in al aparecer
+    this.hit     = false;
+    this.hitTimer = 0;
+    this.spin    = 0;
+  }
+
+  // ── Actualización de animación (Req. 1) ──
+  update() {
+    this.life--;
+
+    // Fade-in con lerp (Req. 5: interpolación)
+    this.alpha = lerp(this.alpha, 255, 0.10);
+
+    // Movimiento de bob (sin wave + frameCount → Req. 1)
+    this.y = this.baseY + sin(frameCount * this.bobSpd + this.bobPhase) * this.bobAmp;
+
+    // Deriva lateral (doradas)
+    if (this.type === 'golden') {
+      this.x += this.driftX;
+      if (abs(this.x) > 550) this.driftX *= -1;
+    }
+
+    // Animación de impacto con lerp (Req. 5)
+    if (this.hit) {
+      this.hitTimer++;
+      this.spin  += lerp(0, 0.28, min(this.hitTimer / 15, 1));
+      this.y     += this.hitTimer * 0.35;
+      this.alpha  = lerp(this.alpha, 0, 0.09);
+    }
+  }
+
+  // ── Dibujo con transformaciones push/pop (Req. 1 + 4) ──
+  draw() {
+    push();
+    translate(this.x, this.y, this.z);
+
+    // Billboard: girar para encarar siempre al jugador
+    rotateY(atan2(-this.x, -this.z));
+    rotateZ(this.spin);
+
+    // Sombra suave en el suelo
+    let floorDist = 140 - this.y;
+    push();
+    translate(0, floorDist, -3);
+    rotateX(HALF_PI);
+    fill(0, 0, 0, map(floorDist, 0, 280, 70, 5, true));
+    noStroke();
+    ellipse(0, 0, this.radius * 2, this.radius * 2);
+    pop();
+
+    // Aros de la diana (dibujar de atrás hacia adelante)
+    let rings = (this.type === 'golden')
+      ? [
+          { r: 1.00, c: [120, 70, 8]   },   // aro exterior
+          { r: 0.72, c: [190, 130, 30] },
+          { r: 0.46, c: [235, 185, 55] },
+          { r: 0.22, c: [255, 240, 130] },   // bullseye dorado
+        ]
+      : [
+          { r: 1.00, c: [230, 230, 230] },   // blanco
+          { r: 0.80, c: [18,  18,  18 ] },   // negro
+          { r: 0.60, c: [28, 96,  205] },    // azul
+          { r: 0.40, c: [210, 28, 28 ] },    // rojo
+          { r: 0.18, c: [255, 220, 0  ] },   // bullseye amarillo
+        ];
+
+    let lifePct = this.life / this.maxLife;
+
+    for (let i = rings.length - 1; i >= 0; i--) {
+      let { r, c } = rings[i];
+      push();
+      translate(0, 0, i * 0.6);   // offset Z para evitar z-fighting
+
+      // Material emisivo en dianas doradas (Req. 4: materiales)
+      if (this.type === 'golden') {
+        let glow = map(sin(frameCount * 0.1 + i), -1, 1, 0.08, 0.38);
+        emissiveMaterial(c[0] * glow, c[1] * glow, c[2] * glow);
+      } else {
+        emissiveMaterial(0, 0, 0);
+      }
+
+      fill(c[0], c[1], c[2], this.alpha);
+      noStroke();
+      rotateX(HALF_PI);
+      cylinder(this.radius * r, 3, 20, 1);
+      pop();
+    }
+
+    // Borde metálico
+    push();
+    translate(0, 0, -1.5);
+    noFill();
+    stroke(this.type === 'golden'
+      ? color(255, 195, 60, this.alpha)
+      : color(55,  55,  55, this.alpha));
+    strokeWeight(1.4);
+    rotateX(HALF_PI);
+    torus(this.radius + 1, 2, 14, 4);
+    pop();
+
+    // Halo pulsante para dianas doradas (Req. 4: trail visual)
+    if (this.type === 'golden') {
+      let haloR = lerp(this.radius + 8, this.radius + 20,   // lerp (Req. 5)
+                       map(sin(frameCount * 0.12), -1, 1, 0, 1));
+      let haloA = map(sin(frameCount * 0.12), -1, 1, 40, 120);
+      push();
+      noFill();
+      stroke(255, 200, 55, haloA);
+      strokeWeight(1);
+      rotateX(HALF_PI);
+      torus(haloR, 1.5, 12, 4);
+      pop();
+    }
+
+    // Barra de vida restante
+    if (!this.hit) {
+      let bw = this.radius * 2 * lifePct;
+      push();
+      translate(-this.radius, this.radius + 12, 2);
+      // Color: verde → rojo según tiempo restante (lerp de color → Req. 5)
+      let br = floor(lerp(50,  220, 1 - lifePct));
+      let bg = floor(lerp(220, 40,  1 - lifePct));
+      fill(br, bg, 50, 160);
+      noStroke();
+      box(bw, 3.5, 1);
+      pop();
+    }
+
+    pop();
+  }
+
+  // ── Detección de impacto por producto punto 3D ──
+  // Compara el vector de mira con el vector hacia el target
+  isAimedAt(lx, ly, lz) {
+    let dx = this.x - 0;
+    let dy = this.y - EYE_Y;
+    let dz = this.z - 0;
+    let d  = sqrt(dx*dx + dy*dy + dz*dz);
+    // Normalizar
+    let nx = dx/d, ny = dy/d, nz = dz/d;
+    // Producto punto: cuánto se alinea el vector de mira con la dirección al target
+    let dot = nx*lx + ny*ly + nz*lz;
+    // Umbral angular basado en tamaño aparente del target
+    let angThresh = cos(atan2(this.radius * 1.4, d));
+    return dot > angThresh && dot > 0.05;
+  }
+
+  isDead() { return this.life <= 0 || (this.hit && this.alpha < 4); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CLASE HitParticle — Partícula de impacto (Objeto 4)
+// ═══════════════════════════════════════════════════════════════
+class HitParticle {
+  constructor(x, y, z, col) {
+    this.x = x; this.y = y; this.z = z;
+    this.col = col;
+    // Dirección aleatoria esférica
+    let theta = random(TWO_PI), phi = random(PI);
+    let vel   = random(2.5, 8);
+    this.vx = sin(phi)*cos(theta)*vel;
+    this.vy = sin(phi)*sin(theta)*vel;
+    this.vz = cos(phi)*vel;
+    this.sz     = random(2, 5.5);
+    this.life   = random(38, 75);
+    this.maxLife = this.life;
+  }
+
+  update() {
+    this.x += this.vx; this.y += this.vy; this.z += this.vz;
+    this.vx *= 0.93; this.vy *= 0.93; this.vz *= 0.93;
+    this.vy  += 0.18;    // gravedad simulada
+    this.life--;
+  }
+
+  draw() {
+    let pct   = this.life / this.maxLife;
+    let alpha = map(pct, 0, 1, 0, 200);
+    let sz    = lerp(0, this.sz, pct);  // lerp de tamaño (Req. 5)
+    push();
+    translate(this.x, this.y, this.z);
+    noStroke();
+    fill(this.col[0], this.col[1], this.col[2], alpha);
+    sphere(sz, 4, 4);
+    pop();
+  }
+
+  isDead() { return this.life <= 0; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DISPARO
+// ═══════════════════════════════════════════════════════════════
+function shoot() {
+  if (shootCooldown > 0 || gameState !== 'playing') return;
+
+  shootCooldown = 14;
+  muzzleFlash   = 1.0;
+
+  // Vector de mira actual
+  let lx =  sin(yaw) * cos(pitch);
+  let ly =  sin(pitch);
+  let lz = -cos(yaw) * cos(pitch);
+
+  // Buscar el target más cercano en la mira
+  let closest = null, minDist = Infinity;
+  for (let t of targets) {
+    if (t.hit) continue;
+    if (t.isAimedAt(lx, ly, lz)) {
+      let d = sqrt(t.x*t.x + (t.y-EYE_Y)*(t.y-EYE_Y) + t.z*t.z);
+      if (d < minDist) { minDist = d; closest = t; }
+    }
+  }
+
+  if (closest) {
+    // ── ACIERTO ──
+    closest.hit = true;
+    let pts = closest.value * combo;
+    score += pts;
+    combo = min(combo + 1, 8);
+    comboTimer = 200;
+    shakeAmt   = 2.5;
+
+    // Partículas en el punto de impacto
+    let col = closest.type === 'golden' ? [255, 200, 50] : [255, 75, 50];
+    let num = closest.type === 'golden' ? 28 : 16;
+    for (let i = 0; i < num; i++)
+      hitFX.push(new HitParticle(closest.x, closest.y, closest.z, col));
+
+    // Popup visual
+    spawnPopup('+' + pts, closest.type === 'golden' ? '#ffd700' : '#00ffe7');
+    flashScreen('rgba(0,255,200,0.08)');
+
+  } else {
+    // ── FALLO ──
+    score = max(0, score - 30);
+    combo = 1;
+    shakeAmt = 1.5;
+    spawnPopup('−30', '#ff4444');
+    flashScreen('rgba(255,40,40,0.10)');
+  }
+
+  // Actualizar barra de cooldown
+  updateShootBar();
+}
+
+// Click en el canvas: bloquear puntero → disparar
+function onCanvasClick() {
+  if (gameState !== 'playing') return;
+  if (!pointerLocked) {
+    cnv.elt.requestPointerLock();
+  } else {
+    shoot();
+  }
+}
+
+// Movimiento del mouse bloqueado → rotar cámara
+function onMouseMove(e) {
+  if (!pointerLocked || gameState !== 'playing') return;
+  yaw   += e.movementX * SENS;
+  pitch  = constrain(pitch + e.movementY * SENS, -PITCH_MAX, PITCH_MAX);
+}
+
+// Teclado (Req. 2: interacción)
+function keyPressed() {
+  if (key === 'r' || key === 'R') { if (gameState === 'playing') score = max(0, score - 0); }
+  // ESC ya libera el puntero (comportamiento nativo del browser)
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FLUJO DE JUEGO
+// ═══════════════════════════════════════════════════════════════
+function startGame() {
+  document.getElementById('screen').style.display  = 'none';
+  document.getElementById('hud-top').style.display = 'flex';
+  document.getElementById('shoot-bar-wrap').style.display = 'block';
+
+  targets = []; hitFX = [];
+  score = 0; timeLeft = 60; combo = 1; comboTimer = 0;
+  normalTimer = 0; goldenTimer = 200;
+  yaw = 0; pitch = 0;
+  gameState = 'playing';
+
+  // Spawn inicial de 4 dianas
+  for (let i = 0; i < 4; i++) targets.push(new Target('normal'));
+}
+
+function endGame() {
+  gameState = 'over';
+  if (document.pointerLockElement) document.exitPointerLock();
+
+  let screen = document.getElementById('screen');
+  screen.innerHTML = `
+    <h1>⏱ TIEMPO</h1>
+    <h2 style="color:#ffd700">PUNTUACIÓN FINAL</h2>
+    <div style="font-size:56px;font-weight:bold;color:#00ffe7;
+                text-shadow:0 0 25px #00ffe7;margin:14px 0">${score}</div>
+    <p style="color:rgba(255,255,255,0.4);font-size:12px;letter-spacing:2px">
+      Combo máximo alcanzado: ×${combo}
+    </p>
+    <div style="margin-top:32px;display:flex;gap:14px">
+      <button class="btn" onclick="location.reload()">▶ JUGAR DE NUEVO</button>
+    </div>`;
+  screen.style.display = 'flex';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  HUD
+// ═══════════════════════════════════════════════════════════════
+function updateHUD() {
+  document.getElementById('v-score').textContent = score;
+  document.getElementById('v-timer').textContent = timeLeft;
+  document.getElementById('v-combo').textContent = `×${combo}`;
+
+  // Color del timer: cambia a rojo los últimos 10 segundos
+  document.getElementById('v-timer').style.color =
+    timeLeft <= 10 ? '#ff4444' : timeLeft <= 20 ? '#ffaa00' : '#ffffff';
+
+  // Color del combo
+  document.getElementById('v-combo').style.color =
+    combo >= 6 ? '#ff6600' : combo >= 3 ? '#ffd700' : '#00ffe7';
+}
+
+let shootBarPct = 100;
+function updateShootBar() {
+  shootBarPct = 0;
+  let bar = document.getElementById('shoot-bar');
+  bar.style.width = '0%';
+  // Animación CSS fill
+  setTimeout(() => { bar.style.transition = `width ${(shootCooldown/60).toFixed(2)}s linear`; bar.style.width = '100%'; }, 10);
+}
+
+function spawnPopup(text, color) {
+  let p = document.createElement('div');
+  p.className = 'popup';
+  p.style.color = color;
+  p.style.left  = (width/2  + random(-70, 70)) + 'px';
+  p.style.top   = (height/2 - 50 + random(-25, 25)) + 'px';
+  p.textContent = text;
+  document.getElementById('popups').appendChild(p);
+  setTimeout(() => p.remove(), 950);
+}
+
+function flashScreen(rgba) {
+  let el = document.getElementById('flash');
+  el.style.background = rgba;
+  el.style.opacity    = '1';
+  setTimeout(() => { el.style.opacity = '0'; }, 80);
+}
+
+function showGoldHint() {
+  let el = document.getElementById('gold-hint');
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity = '0'; }, 3500);
+}
+</script>
 </body>
 </html>
