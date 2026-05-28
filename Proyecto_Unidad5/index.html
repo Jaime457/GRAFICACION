@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8"/>
-  <title>🎯 Galería de Tiro 3D — Proyecto Integrador</title>
+  <title> Galería de Tiro 3D — Proyecto Integrador</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -144,23 +144,23 @@
 
 <!-- Pantalla inicio / fin -->
 <div id="screen">
-  <h1>🎯 SHOOTING RANGE</h1>
+  <h1>SHOOTING RANGE</h1>
   <h2>GALERÍA DE TIRO 3D — Primera Persona</h2>
   <div class="legend">
     <div class="leg-item">
-      <div class="leg-icon">🔴</div>
+      <div class="leg-icon"></div>
       <div class="leg-name">DIANA NORMAL</div>
       <div class="leg-pts" style="color:#00ffe7">100 pts</div>
       <div class="leg-note">Grande · Estática</div>
     </div>
     <div class="leg-item">
-      <div class="leg-icon">🟡</div>
+      <div class="leg-icon"></div>
       <div class="leg-name">DIANA DORADA</div>
       <div class="leg-pts" style="color:#ffd700">500 pts</div>
       <div class="leg-note">Pequeña · Se mueve</div>
     </div>
     <div class="leg-item">
-      <div class="leg-icon">❌</div>
+      <div class="leg-icon"></div>
       <div class="leg-name">FALLO</div>
       <div class="leg-pts" style="color:#ff4444">−30 pts</div>
       <div class="leg-note">No desperdicies balas</div>
@@ -170,7 +170,7 @@
     CLICK en el canvas → bloquear puntero y apuntar<br>
     CLICK → disparar &nbsp;|&nbsp; ESC → liberar puntero
   </div>
-  <button class="btn" id="start-btn">▶ INICIAR PARTIDA</button>
+  <button class="btn" id="start-btn">INICIAR PARTIDA</button>
 </div>
 
 <script>
@@ -215,7 +215,7 @@ function setup() {
   // Campo de visión FPS (60°)
   perspective(PI / 3, width / height, 0.5, 3000);
 
-  // ── Pointer Lock API (Req. 2: interacción de mouse) ──
+  // ── Pointer Lock API  ──
   cnv.elt.addEventListener('click', onCanvasClick);
   document.addEventListener('pointerlockchange', () => {
     pointerLocked = document.pointerLockElement === cnv.elt;
@@ -232,7 +232,7 @@ function draw() {
 
   background(10, 12, 24);
 
-  // ── Iluminación dinámica (Req. 4: efectos visuales) ──
+  // ── Iluminación dinámica ──
   ambientLight(22, 28, 50);
   directionalLight(35, 40, 70, 0, -1, -0.4);
   // Luz orbital lenta (usa frameCount → Req. 1: animación)
@@ -244,7 +244,7 @@ function draw() {
     muzzleFlash = lerp(muzzleFlash, 0, 0.3);  // lerp (Req. 5)
   }
 
-  // ── Cámara primera persona con shake (Req. 2: interacción) ──
+  // ── Cámara primera persona con shake ──
   let sh = shakeAmt > 0.01 ? random(-shakeAmt, shakeAmt) * 0.004 : 0;
   if (shakeAmt > 0.01) shakeAmt = lerp(shakeAmt, 0, 0.18);  // lerp (Req. 5)
 
@@ -252,9 +252,7 @@ function draw() {
   let lx =  sin(yaw)  * cos(pitch + sh);
   let ly =  sin(pitch + sh);
   let lz = -cos(yaw)  * cos(pitch + sh);
-  camera(0, EYE_Y, 0,
-         lx * 200, EYE_Y + ly * 200, lz * 200,
-         0, 1, 0);
+  camera(0, EYE_Y, 0, lx * 200, EYE_Y + ly * 200, lz * 200, 0, 1, 0);
 
   // ── Entorno (Objeto 3: escenario) ──
   drawEnvironment();
@@ -459,7 +457,7 @@ class Target {
     }
   }
 
-  // ── Dibujo con transformaciones push/pop (Req. 1 + 4) ──
+  // ── Dibujo con transformaciones push/pop  ──
   draw() {
     push();
     translate(this.x, this.y, this.z);
